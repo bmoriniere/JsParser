@@ -1,0 +1,4 @@
+debug node chrome :  node --inspect --debug-brk index.js
+
+lancement de la commande :
+node index.js -f ${PATH_TO_FILE}
