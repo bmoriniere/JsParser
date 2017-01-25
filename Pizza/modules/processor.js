@@ -28,10 +28,33 @@ function process(result){
 	}
 
 	const groupArray = _.groupBy(arraySlices,'key');
+	const intersect = _.intersectionWith(arraySlices, arraySlices, (value, other) => {
 
+		if (value.key === 'col:3|row:1' && other.key === 'col:5|row:1'){
+			console.log('Value', value, 'Other', other);
+			console.log(other.top.x > value.bottom.x+1 || 
+           	other.bottom.x+1 < value.top.x || 
+           	other.top.y > value.bottom.y+1 ||
+           	other.bottom.y+1 < value.top.y);
+		}
+
+		return
+			other.top.x > value.bottom.x+1 || 
+           	other.bottom.x+1 < value.top.x || 
+           	other.top.y > value.bottom.y+1 ||
+           	other.bottom.y+1 < value.top.y
+	});
+	console.log(intersect);
+	const groupIntersect = _.groupBy(intersect, 'key');
+	console.log('intersect');
+	_.mapValues(groupIntersect, (elt) => {
+		console.log(elt);
+	});
+
+	/*console.log('grouped');
 	_.mapValues(groupArray, (slice) => {
 		console.log(slice);
-	});
+	});*/
 
 }
 
@@ -47,7 +70,7 @@ function searchForCell({type, oppositeType, result, row, col}){
 			}));
 		}
 		// cell downside
-		if (row < result.R && result.rows[row+1].detail[col] === oppositeType){
+		if (row+1 < +result.R && result.rows[row+1].detail[col] === oppositeType){
 			arraySlices.push(addSlice({
 				col:col,
 				row:row,
@@ -63,7 +86,7 @@ function searchForCell({type, oppositeType, result, row, col}){
 			}));
 		}
 		//cell right
-		if (col < result.C && result.rows[row].detail[col+1] === oppositeType){
+		if (col+1 < +result.C && result.rows[row].detail[col+1] === oppositeType){
 			arraySlices.push(addSlice({
 				col:col,
 				row:row,
