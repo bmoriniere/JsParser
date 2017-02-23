@@ -7,65 +7,106 @@ let lineCount = 0,
     parseError = false,
     parseMessage = '';
 
-var firstLineRegex = /(\d*) (\d*) (\d*) (\d*)/;
-var otherLinesRegex = '';
+var firstLineRegex = /(\d*) (\d*) (\d*) (\d*) (\d*)/;
+var videoSizeRegex = "";// /(\d*)[x]/;
+var endpointRegex = /(\d)* (\d)*/;
+var endpointCacheRegex = /(\d)* (\d)*/;
+var requestRegex = /(\d)* (\d)* (\d)*/;
 
 // Parsing function
 function parse(filePath){
     return new Promise(function(resolve, reject) {
         lineCount = 0;
-        let result = {};
-        result.tomatoesCpt = 0;
-        result.mushroomsCpt = 0;
-        result.rows = [];
-        result.cols = [];
+        let fileDescription = {};
+        fileDescription.nbVideos = 0;
+        fileDescription.nbEndpoints = 0;
+        fileDescription.nbRequests = 0;
+        fileDescription.nbCaches = 0;
+        fileDescription.cacheSize = 0;
+        
+        let videos = [];
+        let endpoints = [];
+        let requests = [];
+        let caches = [];
 
         var lineReader = require('readline').createInterface({
             input: require('fs').createReadStream(filePath)
         });
+        let endPointCount = 0;
+        let endPointStartIndex = 2;
+        let endPointEndIndex = 0;
+        let endPointIndex = 0;
+        let cacheWithinEndpointIndex = 0;
 
         lineReader.on('line', (line)=>{
 
             if (lineCount === 0) {
                 let firstLineRegexResult = line.match(firstLineRegex);
-                result.R = firstLineRegexResult[1];
-                result.C = firstLineRegexResult[2];
-                result.L = firstLineRegexResult[3];
-                result.H = firstLineRegexResult[4];
+                fileDescription.nbVideos = +firstLineRegexResult[1];
+                fileDescription.nbEndpoints = +firstLineRegexResult[2];
+                fileDescription.nbRequests = +firstLineRegexResult[3];
+                fileDescription.nbCaches = +firstLineRegexResult[4];
+                fileDescription.cacheSize = +firstLineRegexResult[5];
 
-                for(let i = 0 ; i < result.C ; i++) {
-                    otherLinesRegex += '([TM]{1})';
-
-                    result.cols[i] = {tomatoesCpt: 0, mushroomsCpt: 0, detail: []};
+                endPointCount = fileDescription.nbEndpoints;
+                for(let i = 0 ; i < fileDescription.nbVideos ; i++) {
+                    videoSizeRegex += "(\\d*) ";
                 }
-            } else if (lineCount >= 1) {
-                // General case
-                let otherLineRegexResult = line.match(otherLinesRegex);
+                for(let i = 0 ; i < fileDescription.nbCaches ; i++) {
+                    caches.push({
+                        id: i,
+                        size: fileDescription.cacheSize,
+                        remainingSize: fileDescription.cacheSize
+                    });
+                }
 
-                result.rows[lineCount-1] = {tomatoesCpt: 0, mushroomsCpt: 0, detail: []};
-                _.forEach(otherLineRegexResult, (value, i) => {
-                    if(i === 0) {
-                        return;
-                    }
+                videoSizeRegex = videoSizeRegex.trim();
+            } else if (lineCount == 1) {
+                let videoSizeResult = line.match(videoSizeRegex);
 
-                    result.rows[lineCount-1].detail[i - 1] = value;
-                    result.cols[i - 1].detail[lineCount-1] = value;
-                    if(value === 'T') {
-                        result.tomatoesCpt++;
-                        result.rows[lineCount-1].tomatoesCpt++;
-                        result.cols[i - 1].tomatoesCpt++;
-                    } else if (value === 'M') {
-                        result.mushroomsCpt++;
-                        result.rows[lineCount-1].mushroomsCpt++;
-                        result.cols[i - 1].mushroomsCpt++;
-                    }
-                })
+                for(let i = 0; i < fileDescription.nbVideos ; i++) {
+                    videos.push({
+                        id: i,
+                        size: +videoSizeResult[i + 1]
+                    });
+                }
+            } else if (lineCount > 1 && lineCount == endPointStartIndex && endPointIndex < endPointCount) {
+                let endPointRegexResult = line.match(endpointRegex);
+                endpoints[endPointIndex] = {
+                    id: endPointIndex,
+                    datacenterLatency: +endPointRegexResult[1],
+                    caches: []
+                };
+                endPointEndIndex = lineCount + +endPointRegexResult[2];
+                endPointIndex++;
+                endPointStartIndex = endPointEndIndex + 1;
+            } else if (lineCount > 1 && lineCount <= endPointEndIndex) {
+                let endpointCacheRegexResult = line.match(endpointCacheRegex);
+                endpoints[endPointIndex - 1].caches.push({
+                    id: +endpointCacheRegexResult[1],
+                    cacheLatency: +endpointCacheRegexResult[2]
+                });
+            } else {
+                // General case = requests
+                let requestRegexResult = line.match(requestRegex);
+                requests.push({
+                    videoId: +requestRegexResult[1],
+                    endpointId: +requestRegexResult[2],
+                    nbRequests: +requestRegexResult[3]
+                });
             }
             lineCount++;
         });
 
+
         lineReader.on('close', ()=>{
-            console.log(result);
+            let result = {
+                fileDescription: fileDescription,
+                videos: videos,
+                caches: caches,
+                requests: requests,
+                endpoints: endpoints
+            };
             // Post treaments
             if (parseError){
                 reject(parseMessage);
