@@ -3,7 +3,7 @@
 var _ = require('lodash');
 
 
-function process(result){
+function process(data){
 
 	let result = {
 		nbCacheServers: 1,
