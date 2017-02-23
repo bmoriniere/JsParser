@@ -8,10 +8,10 @@ let lineCount = 0,
     parseMessage = '';
 
 var firstLineRegex = /(\d*) (\d*) (\d*) (\d*) (\d*)/;
-var videoSizeRegex = "";// /(\d*)[x]/;
-var endpointRegex = /(\d)* (\d)*/;
-var endpointCacheRegex = /(\d)* (\d)*/;
-var requestRegex = /(\d)* (\d)* (\d)*/;
+// var videoSizeRegex = "";// /(\d*)[x]/;
+var endpointRegex = /(\d*) (\d*)/;
+var endpointCacheRegex = /(\d*) (\d*)/;
+var requestRegex = /(\d*) (\d*) (\d*)/;
 
 // Parsing function
 function parse(filePath){
@@ -49,9 +49,7 @@ function parse(filePath){
                 fileDescription.cacheSize = +firstLineRegexResult[5];
 
                 endPointCount = fileDescription.nbEndpoints;
-                for(let i = 0 ; i < fileDescription.nbVideos ; i++) {
-                    videoSizeRegex += "(\\d*) ";
-                }
+
                 for(let i = 0 ; i < fileDescription.nbCaches ; i++) {
                     caches.push({
                         id: i,
@@ -61,14 +59,13 @@ function parse(filePath){
                     });
                 }
 
-                videoSizeRegex = videoSizeRegex.trim();
             } else if (lineCount == 1) {
-                let videoSizeResult = line.match(videoSizeRegex);
+                let videoSizeResult = line.split(" ");
 
                 for(let i = 0; i < fileDescription.nbVideos ; i++) {
                     videos.push({
                         id: i,
-                        size: +videoSizeResult[i + 1]
+                        size: +videoSizeResult[i]
                     });
                 }
             } else if (lineCount > 1 && lineCount == endPointStartIndex && endPointIndex < endPointCount) {
@@ -78,7 +75,10 @@ function parse(filePath){
                     datacenterLatency: +endPointRegexResult[1],
                     caches: []
                 };
-                endPointEndIndex = lineCount + +endPointRegexResult[2];
+                var nbLatencyToCache = +endPointRegexResult[2];
+                endPointEndIndex = lineCount + nbLatencyToCache;
+// console.log(line);
+//                 console.log("endpointIndex:" + endPointIndex + "nbLatencyToCache: " + nbLatencyToCache +  " startIndex:" +  endPointStartIndex + " endIndex:" + endPointEndIndex)
                 endPointIndex++;
                 endPointStartIndex = endPointEndIndex + 1;
             } else if (lineCount > 1 && lineCount <= endPointEndIndex) {
@@ -88,13 +88,21 @@ function parse(filePath){
                     cacheLatency: +endpointCacheRegexResult[2]
                 });
             } else {
-                // General case = requests
-                let requestRegexResult = line.match(requestRegex);
-                requests.push({
-                    videoId: +requestRegexResult[1],
-                    endpointId: +requestRegexResult[2],
-                    nbRequests: +requestRegexResult[3]
-                });
+                // console.log(lineCount);
+                // console.log(line);
+                // console.log("---");
+                if(line) {
+                    // General case = requests
+                    let requestRegexResult = line.match(requestRegex);
+                    requests.push({
+                        videoId: +requestRegexResult[1],
+                        endpointId: +requestRegexResult[2],
+                        nbRequests: +requestRegexResult[3]
+                    });
+                } else {
+                    console.log(lineCount);
+
+                }
             }
             lineCount++;
         });

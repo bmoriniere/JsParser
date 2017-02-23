@@ -21,9 +21,9 @@ var _ = require('lodash');
                     //     size: +videoSizeResult[i + 1]
                     // });
 
-function process(data){
+function process(data, outputFile){
 	dispatchVideos(data);
-	writeOutput(transformToResult(data));
+	writeOutput(transformToResult(data), outputFile);
 }
 
 function dispatchVideos(data) {
@@ -69,7 +69,7 @@ function writeOutput(result, fileName) {
 	outputFile.write(`${result.nbCacheServers} \n`) // append string to your file
 	result.cacheServers.forEach((cache) => {
 		let join = cache.videoIds.join(' ');
-		outputFile.write(`${cache.id} ${join} \n`.trim()); // again
+		outputFile.write(`${cache.id} ${join}\n`); // again
 	});
 	outputFile.end();
 }

@@ -22,7 +22,7 @@ try {
     // We parse then we do the conversion
     parser.parse(program.file)
     .then((result)=>{
-        require('./modules/processor').process(result);
+        require('./modules/processor').process(result, program.file.split("\\")[1] + "_output");
     })
     .catch((msg)=>{
         console.error('Parse Error ! %s', msg);
