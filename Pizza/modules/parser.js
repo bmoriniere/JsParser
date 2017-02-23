@@ -56,7 +56,8 @@ function parse(filePath){
                     caches.push({
                         id: i,
                         size: fileDescription.cacheSize,
-                        remainingSize: fileDescription.cacheSize
+                        remainingSize: fileDescription.cacheSize,
+                        videos: []
                     });
                 }
 
