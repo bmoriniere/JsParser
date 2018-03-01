@@ -47,7 +47,7 @@ function parse(filePath){
 
         lineReader.on('line', (line)=>{
             if (lineCount === 0){
-                const [rows, columns, numberVehicules, numberRides, bonus, numberOfSteps] = line.split(' ');
+                const [rows, columns, numberVehicules, numberRides, bonus, numberOfSteps] = line.split(' ').map(i => +i);
                 result.fileDesc = {
                     rows,
                     columns,
@@ -59,7 +59,7 @@ function parse(filePath){
                 result.rides = [];
             }else if (lineCount >= 1){
                 // General case
-                const [startPointRow, startPointCol, endPointRow, endPointCol, startStep, endStep] = line.split(' ');
+                const [startPointRow, startPointCol, endPointRow, endPointCol, startStep, endStep] = line.split(' ').map(i => +i);
                 result.rides.push({
                     idRide: lineCount - 1,
                     startPoint : {

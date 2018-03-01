@@ -18,7 +18,7 @@ function process(data, outputFile){
     let modes = [];
 	modes.push({...modeBasic(data.rides,createVehicules(data), data.bonus), name: 'basic'});
 
-	modes.push({...modeBasic(sortRidesByLastStep(data.rides), createVehicules(data), data.bonus), name: 'basicSort'});
+	modes.push({...modeBasic(sortRidesByLastStep(data.rides), createVehicules(data), data.fileDesc.bonus), name: 'basicSort'});
 
     const best = _.maxBy(modes, mode => mode.totalPoints);
     console.log(best.name);
@@ -31,7 +31,7 @@ function modeBasic(rides, vehicules, bonus) {
         const availableVehicule = vehicules.filter(v => canTakeRide(v, ride))[0];
         if (availableVehicule) {
             const infos = rideInfo(availableVehicule, ride);
-            const pointsEarn = infos.distanceOfRide + (infos.vehiculeWait == 0 ? bonus : 0);
+            const pointsEarn = infos.distanceOfRide + (infos.vehiculeWait >= 0 ? bonus : 0);
             totalPoints += pointsEarn;
             availableVehicule.rides.push(ride);
             availableVehicule.clock = infos.totalTime;
@@ -45,7 +45,7 @@ function sortRidesByLastStep(rides){
 }
 
 function createVehicules(data) {
-    return Array(+data.fileDesc.numberVehicules).fill(null).map((_, index) => ({
+    return Array(data.fileDesc.numberVehicules).fill(null).map((_, index) => ({
         id: index,
         nbRides: 0,
         rides: [],
