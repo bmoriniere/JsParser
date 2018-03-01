@@ -31,6 +31,18 @@ function process(data, outputFile){
 
 	modes.push({...modeRideFirst(ridesSortByLength, createVehicules(data), data.fileDesc.bonus), name: 'rideFirstLength'});
 
+	modes.push({...modeFare(data.rides, createVehicules(data), data.fileDesc.bonus), name: 'modeFare'});
+
+	modes.push({...modeFare(ridesSortByLastStep, createVehicules(data), data.fileDesc.bonus), name: 'modeFareSort'});
+
+	modes.push({...modeFare(ridesSortByLength, createVehicules(data), data.fileDesc.bonus), name: 'modeFareLength'});
+
+	modes.push({...modeFareRideFirst(data.rides, createVehicules(data), data.fileDesc.bonus), name: 'modeFareFirst'});
+
+	modes.push({...modeFareRideFirst(ridesSortByLastStep, createVehicules(data), data.fileDesc.bonus), name: 'modeFareFirstSort'});
+
+	modes.push({...modeFareRideFirst(ridesSortByLength, createVehicules(data), data.fileDesc.bonus), name: 'modeFareFirstLength'});
+
     const best = _.maxBy(modes, mode => mode.totalPoints);
     console.log(best.name);
 	writeOutput(best, outputFile);
@@ -87,6 +99,55 @@ function timeTotal(vehicule, ride) {
 
     let startStep = Math.max(vehicule.clock + distanceToRide, ride.startStep);
     return (startStep + distanceOfRide);
+}
+
+
+function modeFare(rides, vehicules, bonus) {
+    let totalPoints = 0;
+    rides.forEach(ride => {
+		const notUsedVehicules = vehicules.filter(v => v.rides.length === 0);
+		let usedVehicules = notUsedVehicules;
+		if (notUsedVehicules.length === 0){
+			usedVehicules = vehicules;
+		}
+        const availableVehicule = usedVehicules.filter(v => canTakeRide(v, ride))[0];
+        if (availableVehicule) {
+            const infos = rideInfo(availableVehicule, ride);
+            const pointsEarn = infos.distanceOfRide + (infos.vehiculeWait >= 0 ? bonus : 0);
+            totalPoints += pointsEarn;
+			availableVehicule.rides.push(ride);
+			availableVehicule.position = ride.endPoint;
+            availableVehicule.clock = infos.totalTime;
+        }
+    })
+    return {vehicules, totalPoints};
+}
+
+
+function modeFareRideFirst(rides, vehicules, bonus){
+	let totalPoints = 0;
+    rides.forEach(ride => {
+		const notUsedVehicules = vehicules.filter(v => v.rides.length === 0);
+		let usedVehicules = notUsedVehicules;
+		if (notUsedVehicules.length === 0){
+			usedVehicules = vehicules;
+		}
+		const vehiculeFilters = usedVehicules.filter(v => canTakeRide(v, ride));
+		if (!vehiculeFilters){
+			return;
+		}
+		const vehiculesSorts = vehiculeFilters.sort(v => rideInfo(v, ride).distanceToRide);
+        const availableVehicule = vehiculesSorts[0];
+        if (availableVehicule) {
+            const infos = rideInfo(availableVehicule, ride);
+            const pointsEarn = infos.distanceOfRide + (infos.vehiculeWait >= 0 ? bonus : 0);
+            totalPoints += pointsEarn;
+			availableVehicule.rides.push(ride);
+			availableVehicule.position = ride.endPoint;
+            availableVehicule.clock = infos.totalTime;
+        }
+    })
+    return {vehicules, totalPoints};
 }
 
 function modeRideFirst(rides, vehicules, bonus){
