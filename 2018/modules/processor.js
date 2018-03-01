@@ -64,6 +64,19 @@ function timeTotal(vehicule, ride) {
     return (startStep + distanceOfRide);
 }
 
+function rideInfo(vehicule, ride) {
+    let distanceToRide = getDistance(vehicule.position, ride.startPoint);
+    let distanceOfRide = getDistance(ride.startPoint, ride.endPoint);
+
+    let startStep = Math.max(vehicule.clock + distanceToRide, ride.startStep);
+    return {
+        canTake: (startStep + distanceOfRide) <= ride.endStep,
+        totalTime: (startStep + distanceOfRide),
+        earlyFinish: ride.endStep - (startStep + distanceOfRide),
+        vehiculeWait: ride.startStep - (distanceToRide + vehicule.clock)
+    };
+}
+
 function transformToResult(data) {
 	let result = {
 		vehicules: []
