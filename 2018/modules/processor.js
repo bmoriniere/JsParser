@@ -16,14 +16,18 @@ function process(data, outputFile){
 	let vehicules = createVehicules(data);
 
     let modes = [];
-	modes.push({...modeBasic(data.rides,createVehicules(data), data.fileDesc.bonus), name: 'basic'});
 
 	const ridesSortByLastStep = sortRidesByLastStep(data.rides);
 	const ridesSortByLength = sortRidesByRideLength(data.rides);
+	const ridesSortByProximities = sortRidesByProximities(data.rides);
+
+	modes.push({...modeBasic(data.rides,createVehicules(data), data.fileDesc.bonus), name: 'basic'});
 
 	modes.push({...modeBasic(ridesSortByLastStep, createVehicules(data), data.fileDesc.bonus), name: 'basicSort'});
 
 	modes.push({...modeBasic(ridesSortByLength, createVehicules(data), data.fileDesc.bonus), name: 'basicLength'});
+
+	modes.push({...modeBasic(ridesSortByProximities, createVehicules(data), data.fileDesc.bonus), name: 'basicProximities'});
 
 	modes.push({...modeRideFirst(data.rides, createVehicules(data), data.fileDesc.bonus), name: 'rideFirst'});
 
@@ -31,17 +35,23 @@ function process(data, outputFile){
 
 	modes.push({...modeRideFirst(ridesSortByLength, createVehicules(data), data.fileDesc.bonus), name: 'rideFirstLength'});
 
+	modes.push({...modeRideFirst(ridesSortByProximities, createVehicules(data), data.fileDesc.bonus), name: 'rideFirstProximities'});
+
 	modes.push({...modeFare(data.rides, createVehicules(data), data.fileDesc.bonus), name: 'modeFare'});
 
 	modes.push({...modeFare(ridesSortByLastStep, createVehicules(data), data.fileDesc.bonus), name: 'modeFareSort'});
 
 	modes.push({...modeFare(ridesSortByLength, createVehicules(data), data.fileDesc.bonus), name: 'modeFareLength'});
 
+	modes.push({...modeFare(ridesSortByProximities, createVehicules(data), data.fileDesc.bonus), name: 'modeFareProximities'});
+
 	modes.push({...modeFareRideFirst(data.rides, createVehicules(data), data.fileDesc.bonus), name: 'modeFareFirst'});
 
 	modes.push({...modeFareRideFirst(ridesSortByLastStep, createVehicules(data), data.fileDesc.bonus), name: 'modeFareFirstSort'});
 
 	modes.push({...modeFareRideFirst(ridesSortByLength, createVehicules(data), data.fileDesc.bonus), name: 'modeFareFirstLength'});
+
+	modes.push({...modeFareRideFirst(ridesSortByProximities, createVehicules(data), data.fileDesc.bonus), name: 'modeFareFirstProximities'});
 
     const best = _.maxBy(modes, mode => mode.totalPoints);
     console.log(best.name);
@@ -65,13 +75,27 @@ function modeBasic(rides, vehicules, bonus) {
 }
 
 function sortRidesByLastStep(rides){
-	return rides.sort((rideA, rideB) => rideA.endStep > rideB.endStep);
+	return [...rides.sort((rideA, rideB) => rideA.endStep > rideB.endStep)];
+}
+
+
+function sortRidesByProximities(rides){
+	let popRides = [...rides];
+	let outRides = [];
+	let position = {col : 0, row : 0};
+	while (popRides.length > 0){
+		const rideToPop = _.min(popRides, (ride)=> getDistance(position, dire.startPoint));
+		position = rideToPop.endPoint;
+		outRides.push(rideToPop);
+		popRides.splice(popRides.indexOf(rideToPop),);
+	}
+	return outRides;
 }
 
 
 function sortRidesByRideLength(rides){
 	rides.forEach(ride => ride.distance = getDistance(ride.startPoint, ride.endPoint));
-	return rides.sort((rideA, rideB) => getDistance(rideA.startPoint, rideA.endPoint) < getDistance(rideB.startPoint, rideB.endPoint));
+	return [...rides.sort((rideA, rideB) => getDistance(rideA.startPoint, rideA.endPoint) < getDistance(rideB.startPoint, rideB.endPoint))];
 }
 
 function createVehicules(data) {
