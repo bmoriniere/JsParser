@@ -16,7 +16,7 @@ function process(data, outputFile){
 	let vehicules = createVehicules(data);
 
     let modes = [];
-	modes.push({...modeBasic(data.rides,createVehicules(data), data.bonus), name: 'basic'});
+	modes.push({...modeBasic(data.rides,createVehicules(data), data.fileDesc.bonus), name: 'basic'});
 
 	modes.push({...modeBasic(sortRidesByLastStep(data.rides), createVehicules(data), data.fileDesc.bonus), name: 'basicSort'});
 
