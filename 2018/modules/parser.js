@@ -17,12 +17,12 @@ const InFileSample = {
     rides: [
         {
             startPoint :{
-                row,
-                col
+                row: 0,
+                col: 0
             },
             endPoint :{
-                row,
-                col
+                row: 0,
+                col: 0
             },
             startStep: 0,
             endStep: 0
@@ -47,10 +47,33 @@ function parse(filePath){
 
         lineReader.on('line', (line)=>{
             if (lineCount === 0){
-
-            }else if (lineCount >= 2){
+                const [rows, columns, numberVehicules, numberRides, bonus, numberOfSteps] = line.split(' ');
+                result.fileDesc = {
+                    rows,
+                    columns,
+                    numberVehicules,
+                    numberRides,
+                    bonus,
+                    numberOfSteps
+                };
+                result.rides = [];
+            }else if (lineCount >= 1){
                 // General case
+                const [startPointRow, startPointCol, endPointRow, endPointCol, startStep, endStep] = line.split(' ');
+                result.rides.push({
+                    startPoint : {
+                        row : startPointRow,
+                        col : startPointCol,
+                    },
+                    endPoint : {
+                        row : endPointRow,
+                        col : endPointCol,
+                    },
+                    startStep,
+                    endStep
+                });
             }
+            lineCount++;
         });
 
         lineReader.on('close', ()=>{
