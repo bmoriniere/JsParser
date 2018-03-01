@@ -61,6 +61,7 @@ function parse(filePath){
                 // General case
                 const [startPointRow, startPointCol, endPointRow, endPointCol, startStep, endStep] = line.split(' ');
                 result.rides.push({
+                    idRide: lineCount - 1,
                     startPoint : {
                         row : startPointRow,
                         col : startPointCol,

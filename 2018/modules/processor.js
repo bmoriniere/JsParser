@@ -14,10 +14,21 @@ var _ = require('lodash');
 
 function process(data, outputFile){
     let vehicules = createVehicules(data);
-	writeOutput({vehicules}, outputFile);
+	writeOutput({vehicules: modeBasic(data.rides, vehicules)}, outputFile);
 }
 
-function  createVehicules(data) {
+function modeBasic(rides, vehicules) {
+    rides.forEach(ride => {
+        const availableVehicule = vehicules.filter(v => canTakeRide(v, ride))[0];
+        if (availableVehicule) {
+            availableVehicule.rides.push(ride);
+            availableVehicule.clock = timeTotal(availableVehicule, ride);
+        }
+    })
+    return vehicules;
+}
+
+function createVehicules(data) {
     return Array(+data.fileDesc.numberVehicules).fill(null).map((_, index) => ({
         id: index,
         nbRides: 0,
@@ -34,6 +45,14 @@ function canTakeRide(vehicule, ride) {
 
     let startStep = Math.max(vehicule.clock + distanceToRide, ride.startStep);
     return (startStep + distanceOfRide) <= ride.endStep;
+}
+
+function timeTotal(vehicule, ride) {
+    let distanceToRide = getDistance(vehicule.position, ride.startPoint);
+    let distanceOfRide = getDistance(ride.startPoint, ride.endPoint);
+
+    let startStep = Math.max(vehicule.clock + distanceToRide, ride.startStep);
+    return (startStep + distanceOfRide);
 }
 
 function transformToResult(data) {
@@ -67,7 +86,7 @@ function writeOutput(result, fileName) {
 	var outputFile = fs.createWriteStream('outputs/'+(fileName ? fileName : 'output.out'));
 	result.vehicules.forEach((vehicule) => {
 		const join = vehicule.rides.map(ride => ride.idRide).join(' ');
-		outputFile.write(`${vehicule.nbRides} ${join}\n`); // again
+		outputFile.write(`${vehicule.rides.length} ${join}\n`); // again
 	});
 	outputFile.end();
 }
