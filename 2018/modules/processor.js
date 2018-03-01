@@ -13,7 +13,12 @@ var _ = require('lodash');
 
 
 function process(data, outputFile){
-    let vehicules = createVehicules(data);
+	let vehicules = createVehicules(data);
+
+	let vehiculesModeBasic = modeBasic(data.rides,createVehicules(data));
+
+	let vehiculesSortLastStepModeBasic = modeBasic(sortRidesByLastStep(data.rides), createVehicules(data));
+
 	writeOutput({vehicules: modeBasic(data.rides, vehicules)}, outputFile);
 }
 
@@ -26,6 +31,10 @@ function modeBasic(rides, vehicules) {
         }
     })
     return vehicules;
+}
+
+function sortRidesByLastStep(rides){
+	return rides.sort((rideA, rideB) => rideA.endStep < rideB.endStep);
 }
 
 function createVehicules(data) {
