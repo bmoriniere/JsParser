@@ -20,6 +20,10 @@ function process(data, outputFile){
 
 	modes.push({...modeBasic(sortRidesByLastStep(data.rides), createVehicules(data), data.fileDesc.bonus), name: 'basicSort'});
 
+	modes.push({...modeRideFirst(data.rides, createVehicules(data), data.fileDesc.bonus), name: 'rideFirst'});
+
+	modes.push({...modeRideFirst(sortRidesByLastStep(data.rides), createVehicules(data), data.fileDesc.bonus), name: 'rideFirstSort'});
+
     const best = _.maxBy(modes, mode => mode.totalPoints);
     console.log(best.name);
 	writeOutput(best, outputFile);
@@ -33,7 +37,8 @@ function modeBasic(rides, vehicules, bonus) {
             const infos = rideInfo(availableVehicule, ride);
             const pointsEarn = infos.distanceOfRide + (infos.vehiculeWait >= 0 ? bonus : 0);
             totalPoints += pointsEarn;
-            availableVehicule.rides.push(ride);
+			availableVehicule.rides.push(ride);
+			availableVehicule.position = ride.endPoint;
             availableVehicule.clock = infos.totalTime;
         }
     })
@@ -71,6 +76,27 @@ function timeTotal(vehicule, ride) {
     return (startStep + distanceOfRide);
 }
 
+function modeRideFirst(rides, vehicules, bonus){
+	let totalPoints = 0;
+    rides.forEach(ride => {
+		const vehiculeFilters = vehicules.filter(v => canTakeRide(v, ride));
+		if (!vehiculeFilters){
+			return;
+		}
+		const vehiculesSorts = vehiculeFilters.sort(v => rideInfo(v, ride).distanceToRide);
+        const availableVehicule = vehiculesSorts[0];
+        if (availableVehicule) {
+            const infos = rideInfo(availableVehicule, ride);
+            const pointsEarn = infos.distanceOfRide + (infos.vehiculeWait >= 0 ? bonus : 0);
+            totalPoints += pointsEarn;
+			availableVehicule.rides.push(ride);
+			availableVehicule.position = ride.endPoint;
+            availableVehicule.clock = infos.totalTime;
+        }
+    })
+    return {vehicules, totalPoints};
+}
+
 function rideInfo(vehicule, ride) {
     let distanceToRide = getDistance(vehicule.position, ride.startPoint);
     let distanceOfRide = getDistance(ride.startPoint, ride.endPoint);
@@ -80,7 +106,8 @@ function rideInfo(vehicule, ride) {
         canTake: (startStep + distanceOfRide) <= ride.endStep,
         totalTime: (startStep + distanceOfRide),
         earlyFinish: ride.endStep - (startStep + distanceOfRide),
-        vehiculeWait: ride.startStep - (distanceToRide + vehicule.clock),
+		vehiculeWait: ride.startStep - (distanceToRide + vehicule.clock),
+		distanceToRide,
         distanceOfRide
     };
 }
