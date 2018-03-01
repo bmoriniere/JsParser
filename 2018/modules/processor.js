@@ -8,7 +8,7 @@ var _ = require('lodash');
 			//			nbRides:
 			//			rides.push({
 			//				id:
-			//			})
+            //			})
 			// })
 
 
@@ -38,6 +38,10 @@ function transformToResult(data) {
 	}
 
 	return result;
+}
+
+function getDistance(A, B) {
+    return Math.abs(A.row - B.row) + Math.abs(A.col - B.col);
 }
 
 function writeOutput(result, fileName) {
