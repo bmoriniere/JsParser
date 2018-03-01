@@ -52,6 +52,7 @@ function process(data, outputFile){
 	modes.push({...modeFareRideFirst(ridesSortByLength, createVehicules(data), data.fileDesc.bonus), name: 'modeFareFirstLength'});
 
 	modes.push({...modeFareRideFirst(ridesSortByProximities, createVehicules(data), data.fileDesc.bonus), name: 'modeFareFirstProximities'});
+    modes.push({...modeVehiculesFirst(data.rides,createVehicules(data), data.fileDesc), name: 'vehiculesFirst'})
 
     const best = _.maxBy(modes, mode => mode.totalPoints);
     console.log(best.name);
@@ -63,7 +64,7 @@ function modeBasic(rides, vehicules, bonus) {
     rides.forEach(ride => {
         const availableVehicule = vehicules.filter(v => canTakeRide(v, ride))[0];
         if (availableVehicule) {
-            const infos = rideInfo(availableVehicule, ride);
+            const infos = getRideInfo(availableVehicule, ride);
             const pointsEarn = infos.distanceOfRide + (infos.vehiculeWait >= 0 ? bonus : 0);
             totalPoints += pointsEarn;
 			availableVehicule.rides.push(ride);
@@ -71,6 +72,48 @@ function modeBasic(rides, vehicules, bonus) {
             availableVehicule.clock = infos.totalTime;
         }
     })
+    return {vehicules, totalPoints};
+}
+
+function getRideInfo(vehicule, ride) {
+    let distanceToRide = getDistance(vehicule.position, ride.startPoint);
+    let distanceOfRide = getDistance(ride.startPoint, ride.endPoint);
+
+    let startStep = Math.max(vehicule.clock + distanceToRide, ride.startStep);
+    return {
+        ride,
+        canTake: (startStep + distanceOfRide) <= ride.endStep,
+        totalTime: (startStep + distanceOfRide),
+        earlyFinish: ride.endStep - (startStep + distanceOfRide),
+        vehiculeWait: ride.startStep - (distanceToRide + vehicule.clock),
+        distanceOfRide
+    };
+}
+
+function modeVehiculesFirst(rides, vehicules, fileDesc) {
+    let currentStep = 0;
+    let totalPoints = 0;
+    while (currentStep < fileDesc.numberOfSteps && rides.length) {
+        let vehiculesReady = vehicules.filter(v => v.clock <= currentStep);
+        vehiculesReady.forEach(v => {
+            let rideInfo = rides.map(r => getRideInfo(v, r)).filter(r => r.canTake).sort((i1, i2) => i1.totalTime - i2.totalTime)[0];
+            if (rideInfo) {
+                rides = rides.filter(r => rideInfo.ride.idRide !== r.idRide);
+                v.currentRide = rideInfo.ride;
+                v.rides.push(rideInfo.ride);
+                v.clock = rideInfo.totalTime;
+                v.position = {...rideInfo.ride.endPoint};
+                const pointsEarn = rideInfo.distanceOfRide + (rideInfo.vehiculeWait >= 0 ? fileDesc.bonus : 0);
+                totalPoints += pointsEarn;
+            }
+        });
+        const newStep = Math.min(...vehicules.map(v => v.clock));
+        if (newStep <= currentStep) {
+            currentStep++;
+        } else {
+            currentStep = newStep;
+        }
+    }
     return {vehicules, totalPoints};
 }
 
@@ -124,7 +167,6 @@ function timeTotal(vehicule, ride) {
     let startStep = Math.max(vehicule.clock + distanceToRide, ride.startStep);
     return (startStep + distanceOfRide);
 }
-
 
 function modeFare(rides, vehicules, bonus) {
     let totalPoints = 0;
