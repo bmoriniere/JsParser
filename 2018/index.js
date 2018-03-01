@@ -1,7 +1,8 @@
 'use strict'
 var program = require('commander'),
     fs = require('fs'),
-    parser = require('./modules/parser');
+    parser = require('./modules/parser'),
+    processor = require('./modules/processor');
 
 program
   .version('0.0.1')
@@ -22,7 +23,7 @@ try {
     // We parse then we do the conversion
     parser.parse(program.file)
     .then((result)=>{
-       require('./modules/processor').process(result, program.file.split("\\")[1] + "_output");
+        processor.process(result, program.file.split("\\")[1] + "_output");
     })
     .catch((msg)=>{
         console.error('Parse Error ! %s', msg);
